@@ -58,18 +58,23 @@ const char lua_ident[] =
 
 
 static TValue *index2addr (lua_State *L, int idx) {
-  CallInfo *ci = L->ci;
+  CallInfo *ci = L->ci; /* call info for current function */
   if (idx > 0) {
+    //如果idx大于0，则从当前的方法地址+idx
     TValue *o = ci->func + idx;
+    //检查idx是否合法: idx <= top - 当前
     api_check(L, idx <= ci->top - (ci->func + 1), "unacceptable index");
+    // 如果结果已经超出top
     if (o >= L->top) return NONVALIDVALUE;
     else return o;
   }
   else if (!ispseudo(idx)) {  /* negative index */
+    //如果idx是负数，并且大于MaxStack(-15000) - 1000，则返回堆栈中距离top为|idx|的value
     api_check(L, idx != 0 && -idx <= L->top - (ci->func + 1), "invalid index");
     return L->top + idx;
   }
-  else if (idx == LUA_REGISTRYINDEX)
+  //如果idx == MaxStack(-15000) - 1000 则返回 state中的l_G中的l_registry 
+  else if (idx == LUA_REGISTRYINDEX) 
     return &G(L)->l_registry;
   else {  /* upvalues */
     idx = LUA_REGISTRYINDEX - idx;

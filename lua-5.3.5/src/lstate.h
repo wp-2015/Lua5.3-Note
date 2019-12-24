@@ -60,7 +60,7 @@ struct lua_longjmp;  /* defined in ldo.c */
 #define l_signalT	sig_atomic_t
 #endif
 
-
+/* 额外的堆栈空间来处理TM调用和一些其他附加功能 */
 /* extra stack space to handle TM calls and some other extras */
 #define EXTRA_STACK   5
 
@@ -183,7 +183,7 @@ struct lua_State {
   global_State *l_G;
   CallInfo *ci;  /* call info for current function */
   const Instruction *oldpc;  /* last pc traced */
-  StkId stack_last;  /* last free slot in the stack */
+  StkId stack_last;  /* last free slot in the stack 堆栈中的最后一个空闲槽 */
   StkId stack;  /* stack base */
   UpVal *openupval;  /* list of open upvalues in this stack */
   GCObject *gclist;

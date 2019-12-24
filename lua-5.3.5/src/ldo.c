@@ -152,7 +152,7 @@ int luaD_rawrunprotected (lua_State *L, Pfunc f, void *ud) {
 
 /*
 ** {==================================================================
-** Stack reallocation
+** Stack reallocation 再分配
 ** ===================================================================
 */
 static void correctstack (lua_State *L, TValue *oldstack) {
@@ -173,28 +173,32 @@ static void correctstack (lua_State *L, TValue *oldstack) {
 /* some space for error handling */
 #define ERRORSTACKSIZE	(LUAI_MAXSTACK + 200)
 
-
+// 重新分配
 void luaD_reallocstack (lua_State *L, int newsize) {
   TValue *oldstack = L->stack;
   int lim = L->stacksize;
   lua_assert(newsize <= LUAI_MAXSTACK || newsize == ERRORSTACKSIZE);
   lua_assert(L->stack_last - L->stack == L->stacksize - EXTRA_STACK);
   luaM_reallocvector(L, L->stack, L->stacksize, newsize, TValue);
+  //从原stack的顶部到需要扩充到的目标位置依次置空
   for (; lim < newsize; lim++)
     setnilvalue(L->stack + lim); /* erase new segment */
+  //设置扩充之后的属性
   L->stacksize = newsize;
   L->stack_last = L->stack + newsize - EXTRA_STACK;
   correctstack(L, oldstack);
 }
 
-
+// 扩充state。n为期望扩充的大小
 void luaD_growstack (lua_State *L, int n) {
   int size = L->stacksize;
   if (size > LUAI_MAXSTACK)  /* error after extra size? */
     luaD_throw(L, LUA_ERRERR);
   else {
+    // 头部 - 尾部 + n + 5  ->也就是现在的大小+需要扩展的大小+额外空间(5)
     int needed = cast_int(L->top - L->stack) + n + EXTRA_STACK;
     int newsize = 2 * size;
+    // 这里应该是最小保证扩充的是原空间的2倍。如果原空间的2倍小于需要扩建的空间，则直接扩充需要的空间
     if (newsize > LUAI_MAXSTACK) newsize = LUAI_MAXSTACK;
     if (newsize < needed) newsize = needed;
     if (newsize > LUAI_MAXSTACK) {  /* stack overflow? */

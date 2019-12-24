@@ -30,7 +30,7 @@
 
 
 /*
-** Upvalues for Lua closures
+** Upvalues for Lua closures闭包
 */
 struct UpVal {
   TValue *v;  /* points to stack or to its own value */
