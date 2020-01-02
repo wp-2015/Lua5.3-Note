@@ -70,7 +70,7 @@ struct lua_longjmp;  /* defined in ldo.c */
 
 /* kinds of Garbage Collection */
 #define KGC_NORMAL	0
-#define KGC_EMERGENCY	1	/* gc was forced by an allocation failure */
+#define KGC_EMERGENCY	1	/* gc was forced by an allocation failure */ //gc是由于分配失败造成的
 
 
 typedef struct stringtable {
@@ -116,8 +116,7 @@ typedef struct CallInfo {
 #define CIST_OAH	(1<<0)	/* original value of 'allowhook' */
 #define CIST_LUA	(1<<1)	/* call is running a Lua function */
 #define CIST_HOOKED	(1<<2)	/* call is running a debug hook */
-#define CIST_FRESH	(1<<3)	/* call is running on a fresh invocation
-                                   of luaV_execute */
+#define CIST_FRESH	(1<<3)	/* call is running on a fresh invocation of luaV_execute */
 #define CIST_YPCALL	(1<<4)	/* call is a yieldable protected call */
 #define CIST_TAIL	(1<<5)	/* call was tail called */
 #define CIST_HOOKYIELD	(1<<6)	/* last hook called yielded */
@@ -138,7 +137,8 @@ typedef struct global_State {
   lua_Alloc frealloc;  /* function to reallocate memory */
   void *ud;         /* auxiliary data to 'frealloc' */
   l_mem totalbytes;  /* number of bytes currently allocated - GCdebt */
-  l_mem GCdebt;  /* bytes allocated not yet compensated by the collector */
+  //尚且没有被GC收集器分配的空间 -- 已经被占用的且有用的空间
+  l_mem GCdebt;  /* bytes allocated not yet compensated by the collector */ 
   lu_mem GCmemtrav;  /* memory traversed by the GC */
   lu_mem GCestimate;  /* an estimate of the non-garbage memory in use */
   stringtable strt;  /* hash table for strings */
@@ -148,7 +148,7 @@ typedef struct global_State {
   lu_byte gcstate;  /* state of garbage collector */
   lu_byte gckind;  /* kind of GC running */
   lu_byte gcrunning;  /* true if GC is running */
-  GCObject *allgc;  /* list of all collectable objects */
+  GCObject *allgc;  /* list of all collectable objects */ //所有可回收的obj
   GCObject **sweepgc;  /* current position of sweep in list */
   GCObject *finobj;  /* list of collectable objects with finalizers */
   GCObject *gray;  /* list of gray objects */

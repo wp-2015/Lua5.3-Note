@@ -158,9 +158,12 @@ int luaD_rawrunprotected (lua_State *L, Pfunc f, void *ud) {
 static void correctstack (lua_State *L, TValue *oldstack) {
   CallInfo *ci;
   UpVal *up;
+  //重新定位top，栈内已经使用的最顶部与last有区分
   L->top = (L->top - oldstack) + L->stack;
+  //up->v记录的是在栈中的位置，依次吧openupval搬到新的栈
   for (up = L->openupval; up != NULL; up = up->u.open.next)
     up->v = (up->v - oldstack) + L->stack;
+  //L中的callinfo中记录位置的也需要更新
   for (ci = L->ci; ci != NULL; ci = ci->previous) {
     ci->top = (ci->top - oldstack) + L->stack;
     ci->func = (ci->func - oldstack) + L->stack;
@@ -179,6 +182,7 @@ void luaD_reallocstack (lua_State *L, int newsize) {
   int lim = L->stacksize;
   lua_assert(newsize <= LUAI_MAXSTACK || newsize == ERRORSTACKSIZE);
   lua_assert(L->stack_last - L->stack == L->stacksize - EXTRA_STACK);
+  //re alloc vector 重新分配vector？
   luaM_reallocvector(L, L->stack, L->stacksize, newsize, TValue);
   //从原stack的顶部到需要扩充到的目标位置依次置空
   for (; lim < newsize; lim++)

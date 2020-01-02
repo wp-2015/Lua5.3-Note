@@ -36,14 +36,14 @@
 /*
 ** Possible states of the Garbage Collector
 */
-#define GCSpropagate	0
-#define GCSatomic	1
+#define GCSpropagate	0  	// 传播 传送
+#define GCSatomic	1		//原子的，原子能的；微粒子的
 #define GCSswpallgc	2
 #define GCSswpfinobj	3
 #define GCSswptobefnz	4
 #define GCSswpend	5
 #define GCScallfin	6
-#define GCSpause	7
+#define GCSpause	7		//暂停
 
 
 #define issweepphase(g)  \
@@ -67,7 +67,7 @@
 #define resetbits(x,m)		((x) &= cast(lu_byte, ~(m)))
 #define setbits(x,m)		((x) |= (m))
 #define testbits(x,m)		((x) & (m))
-#define bitmask(b)		(1<<(b))
+#define bitmask(b)		(1<<(b)) //1向左移动b位
 #define bit2mask(b1,b2)		(bitmask(b1) | bitmask(b2))
 #define l_setbit(x,b)		setbits(x, bitmask(b))
 #define resetbit(x,b)		resetbits(x, bitmask(b))
@@ -75,13 +75,13 @@
 
 
 /* Layout for bit use in 'marked' field: */
-#define WHITE0BIT	0  /* object is white (type 0) */
+#define WHITE0BIT	0  /* object is white (type 0) */  
 #define WHITE1BIT	1  /* object is white (type 1) */
 #define BLACKBIT	2  /* object is black */
 #define FINALIZEDBIT	3  /* object has been marked for finalization */
 /* bit 7 is currently used by tests (luaL_checkmemory) */
 
-#define WHITEBITS	bit2mask(WHITE0BIT, WHITE1BIT)
+#define WHITEBITS	bit2mask(WHITE0BIT, WHITE1BIT) //obj is white(type 0 或者 1)
 
 
 #define iswhite(x)      testbits((x)->marked, WHITEBITS)
@@ -91,14 +91,14 @@
 
 #define tofinalize(x)	testbit((x)->marked, FINALIZEDBIT)
 
-#define otherwhite(g)	((g)->currentwhite ^ WHITEBITS)
+#define otherwhite(g)	((g)->currentwhite ^ WHITEBITS) //异或 相同为0不同为1 标记currentwhite为非white
 #define isdeadm(ow,m)	(!(((m) ^ WHITEBITS) & (ow)))
 #define isdead(g,v)	isdeadm(otherwhite(g), (v)->marked)
 
 #define changewhite(x)	((x)->marked ^= WHITEBITS)
 #define gray2black(x)	l_setbit((x)->marked, BLACKBIT)
 
-#define luaC_white(g)	cast(lu_byte, (g)->currentwhite & WHITEBITS)
+#define luaC_white(g)	cast(lu_byte, (g)->currentwhite & WHITEBITS) //currentwhite 标记成 white(type 0 或者 1)
 
 
 /*

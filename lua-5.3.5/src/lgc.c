@@ -1156,10 +1156,11 @@ void luaC_step (lua_State *L) {
 ** to sweep all objects to turn them back to white (as white has not
 ** changed, nothing will be collected).
 */
+// emergency 突发、紧急状况
 void luaC_fullgc (lua_State *L, int isemergency) {
   global_State *g = G(L);
   lua_assert(g->gckind == KGC_NORMAL);
-  if (isemergency) g->gckind = KGC_EMERGENCY;  /* set flag */
+  if (isemergency) g->gckind = KGC_EMERGENCY;  /* set flag */ //gc是由于分配失败造成的
   if (keepinvariant(g)) {  /* black objects? */
     entersweep(L); /* sweep everything to turn them back to white */
   }

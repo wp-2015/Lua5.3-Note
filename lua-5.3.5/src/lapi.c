@@ -93,6 +93,7 @@ static TValue *index2addr (lua_State *L, int idx) {
 ** to be called by 'lua_checkstack' in protected mode, to grow stack
 ** capturing memory errors
 */
+//扩充栈
 static void growstack (lua_State *L, void *ud) {
   int size = *(int *)ud;
   luaD_growstack(L, size);
