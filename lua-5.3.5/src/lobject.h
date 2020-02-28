@@ -43,7 +43,7 @@
 ** 2 - regular C function (closure)
 */
 
-/* Variant tags for functions */
+/* Variant不同的 tags for functions */ //#define LUA_TFUNCTION		6
 #define LUA_TLCL	(LUA_TFUNCTION | (0 << 4))  /* Lua closure */
 #define LUA_TLCF	(LUA_TFUNCTION | (1 << 4))  /* light C function */
 #define LUA_TCCL	(LUA_TFUNCTION | (2 << 4))  /* C closure */
@@ -255,7 +255,7 @@ typedef struct lua_TValue {
 #define setdeadvalue(obj)	settt_(obj, LUA_TDEADKEY)
 
 
-
+//TValue *fr, *to;
 #define setobj(L,obj1,obj2) \
 	{ TValue *io1=(obj1); *io1 = *(obj2); \
 	  (void)L; checkliveness(L,io1); }
@@ -302,6 +302,7 @@ typedef TValue *StkId;  /* index to stack elements */
 */
 typedef struct TString {
   CommonHeader;
+  //如果是short string则为原字符串，如果是long string则保存hash
   lu_byte extra;  /* reserved words for short strings; "has hash" for longs */
   lu_byte shrlen;  /* length for short strings */
   unsigned int hash;
@@ -488,7 +489,7 @@ typedef union TKey {
 	  (void)L; checkliveness(L,io_); }
 
 
-typedef struct Node {
+typedef struct Node { 
   TValue i_val;
   TKey i_key;
 } Node;
@@ -497,6 +498,7 @@ typedef struct Node {
 typedef struct Table {
   CommonHeader;
   lu_byte flags;  /* 1<<p means tagmethod(p) is not present */
+  //这里lsizenode的个数是2的n次方。
   lu_byte lsizenode;  /* log2 of size of 'node' array */
   unsigned int sizearray;  /* size of 'array' array */
   TValue *array;  /* array part */
@@ -509,7 +511,7 @@ typedef struct Table {
 
 
 /*
-** 'module' operation for hashing (size is always a power of 2)
+** 'module' operation操作 for hashing (size is always a power of 2)
 */
 #define lmod(s,size) \
 	(check_exp((size&(size-1))==0, (cast(int, (s) & ((size)-1)))))

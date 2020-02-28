@@ -61,17 +61,17 @@ typedef struct lua_State lua_State;
 */
 #define LUA_TNONE		(-1)
 
-#define LUA_TNIL		0
-#define LUA_TBOOLEAN		1
-#define LUA_TLIGHTUSERDATA	2
-#define LUA_TNUMBER		3
-#define LUA_TSTRING		4
-#define LUA_TTABLE		5
-#define LUA_TFUNCTION		6
-#define LUA_TUSERDATA		7
-#define LUA_TTHREAD		8
+#define LUA_TNIL		0         //nill
+#define LUA_TBOOLEAN		1     //bool
+#define LUA_TLIGHTUSERDATA	2 //lightUserdata
+#define LUA_TNUMBER		3       //number
+#define LUA_TSTRING		4       //string
+#define LUA_TTABLE		5       //table
+#define LUA_TFUNCTION		6     //function
+#define LUA_TUSERDATA		7     //userdata
+#define LUA_TTHREAD		8       //thread
 
-#define LUA_NUMTAGS		9
+#define LUA_NUMTAGS		9       //number of tags
 
 
 
@@ -92,8 +92,8 @@ typedef LUA_NUMBER lua_Number;
 /* type for integer functions */
 typedef LUA_INTEGER lua_Integer;
 
-/* unsigned integer type */
-typedef LUA_UNSIGNED lua_Unsigned;
+/* unsigned integer type */ //unsigned int
+typedef LUA_UNSIGNED lua_Unsigned; 
 
 /* type for continuation-function contexts */
 typedef LUA_KCONTEXT lua_KContext;

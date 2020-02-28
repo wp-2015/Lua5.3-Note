@@ -159,13 +159,13 @@ void luaO_arith (lua_State *L, int op, const TValue *p1, const TValue *p2,
   luaT_trybinTM(L, p1, p2, res, cast(TMS, (op - LUA_OPADD) + TM_ADD));
 }
 
-
+//O_hexa = O_六
 int luaO_hexavalue (int c) {
-  if (lisdigit(c)) return c - '0';
-  else return (ltolower(c) - 'a') + 10;
+  if (lisdigit(c)) return c - '0'; //如果是数字，return c - "0"
+  else return (ltolower(c) - 'a') + 10; //否则转为小写 - 'a' + 10
 }
 
-
+//字符串是否是负数(-开头), 是返回1，否返回0
 static int isneg (const char **s) {
   if (**s == '-') { (*s)++; return 1; }
   else if (**s == '+') (*s)++;
@@ -190,30 +190,37 @@ static int isneg (const char **s) {
 ** convert an hexadecimal numeric string to a number, following
 ** C99 specification for 'strtod'
 */
+// 十六进制的string to number
 static lua_Number lua_strx2number (const char *s, char **endptr) {
-  int dot = lua_getlocaledecpoint();
-  lua_Number r = 0.0;  /* result (accumulator) */
-  int sigdig = 0;  /* number of significant digits */
+  int dot = lua_getlocaledecpoint();//这里就是返回一个'.'
+  lua_Number r = 0.0;  /* result (accumulator累加器) */
+  int sigdig = 0;  /* number of significant有意义 digits数字 */
   int nosigdig = 0;  /* number of non-significant digits */
-  int e = 0;  /* exponent correction */
-  int neg;  /* 1 if number is negative */
+  int e = 0;  /* exponent correction 指数修正*/
+  int neg;  /* 1 if number is negative 负数*/
   int hasdot = 0;  /* true after seen a dot */
   *endptr = cast(char *, s);  /* nothing is valid yet */
-  while (lisspace(cast_uchar(*s))) s++;  /* skip initial spaces */
-  neg = isneg(&s);  /* check signal */
+  //去除开头空格
+  while (lisspace(cast_uchar(*s))) s++;  /* skip initial spaces */ 
+  neg = isneg(&s);  /* check signal */ //检查是否是负数
+  //如果不是十六进制，则此次为无效的转换。这个算法只进行十六进制转换
   if (!(*s == '0' && (*(s + 1) == 'x' || *(s + 1) == 'X')))  /* check '0x' */
     return 0.0;  /* invalid format (no '0x') */
   for (s += 2; ; s++) {  /* skip '0x' and read numeral */
+    //有小数点
     if (*s == dot) {
       if (hasdot) break;  /* second dot? stop loop */
       else hasdot = 1;
     }
     else if (lisxdigit(cast_uchar(*s))) {
+      //开头的0都是无效数字
       if (sigdig == 0 && *s == '0')  /* non-significant digit (zero)? */
         nosigdig++;
       else if (++sigdig <= MAXSIGDIG)  /* can read it without overflow? */
           r = (r * cast_num(16.0)) + luaO_hexavalue(*s);
+      //超过30位了,忽略,但是要记位数
       else e++; /* too many digits; ignore, but still count for exponent */
+      //如果有小数点e计数要-
       if (hasdot) e--;  /* decimal digit? correct exponent */
     }
     else break;  /* neither a dot nor a digit */
@@ -221,7 +228,10 @@ static lua_Number lua_strx2number (const char *s, char **endptr) {
   if (nosigdig + sigdig == 0)  /* no digits? */
     return 0.0;  /* invalid format */
   *endptr = cast(char *, s);  /* valid up to here */
+  //每个数字乘以/除以2的4次方
+  //因为之前是16进制位计数是2的4次方。
   e *= 4;  /* each digit multiplies/divides value by 2^4 */
+  //p后面代表2的几次方，例如0xa.1fp10代表最后乘以2的10次方
   if (*s == 'p' || *s == 'P') {  /* exponent part? */
     int exp1 = 0;  /* exponent value */
     int neg1;  /* exponent signal */
@@ -229,6 +239,7 @@ static lua_Number lua_strx2number (const char *s, char **endptr) {
     neg1 = isneg(&s);  /* signal */
     if (!lisdigit(cast_uchar(*s)))
       return 0.0;  /* invalid; must have at least one digit */
+    //计算最后需要乘以2的几次方,组合P后面的数字
     while (lisdigit(cast_uchar(*s)))  /* read exponent */
       exp1 = exp1 * 10 + *(s++) - '0';
     if (neg1) exp1 = -exp1;
@@ -236,6 +247,7 @@ static lua_Number lua_strx2number (const char *s, char **endptr) {
     *endptr = cast(char *, s);  /* valid up to here */
   }
   if (neg) r = -r;
+  //ldexp 返回r乘以2的e次幂
   return l_mathop(ldexp)(r, e);
 }
 
@@ -248,10 +260,14 @@ static lua_Number lua_strx2number (const char *s, char **endptr) {
 #define L_MAXLENNUM	200
 #endif
 
+
 static const char *l_str2dloc (const char *s, lua_Number *result, int mode) {
   char *endptr;
+  //lua_strx2number 十六进制的string to number
+  //如果不是十六进制 直接使用strtod string to double就可以
   *result = (mode == 'x') ? lua_strx2number(s, &endptr)  /* try to convert */
                           : lua_str2number(s, &endptr);
+  //endptr 记录的是结束的位置
   if (endptr == s) return NULL;  /* nothing recognized? */
   while (lisspace(cast_uchar(*endptr))) endptr++;  /* skip trailing spaces */
   return (*endptr == '\0') ? endptr : NULL;  /* OK if no trailing characters */
@@ -262,7 +278,7 @@ static const char *l_str2dloc (const char *s, lua_Number *result, int mode) {
 ** Convert string 's' to a Lua number (put in 'result'). Return NULL
 ** on fail or the address of the ending '\0' on success.
 ** 'pmode' points to (and 'mode' contains) special things in the string:
-** - 'x'/'X' means an hexadecimal numeral
+** - 'x'/'X' means an hexadecimal(十六进制) numeral
 ** - 'n'/'N' means 'inf' or 'nan' (which should be rejected)
 ** - '.' just optimizes the search for the common case (nothing special)
 ** This function accepts both the current locale or a dot as the radix
@@ -273,11 +289,14 @@ static const char *l_str2dloc (const char *s, lua_Number *result, int mode) {
 */
 static const char *l_str2d (const char *s, lua_Number *result) {
   const char *endptr;
+  //strpbrk 检索字符串 str1 中第一个匹配字符串 str2 中字符的字符，不包含空结束字符
   const char *pmode = strpbrk(s, ".xXnN");
   int mode = pmode ? ltolower(cast_uchar(*pmode)) : 0;
   if (mode == 'n')  /* reject 'inf' and 'nan' */
     return NULL;
+
   endptr = l_str2dloc(s, result, mode);  /* try to convert */
+  //下面无非是重新确定了lua_getlocaledecpoint = '.'
   if (endptr == NULL) {  /* failed? may be a different locale */
     char buff[L_MAXLENNUM + 1];
     const char *pdot = strchr(s, '.');
@@ -296,21 +315,22 @@ static const char *l_str2d (const char *s, lua_Number *result) {
 #define MAXBY10		cast(lua_Unsigned, LUA_MAXINTEGER / 10)
 #define MAXLASTD	cast_int(LUA_MAXINTEGER % 10)
 
+//string to int
 static const char *l_str2int (const char *s, lua_Integer *result) {
   lua_Unsigned a = 0;
   int empty = 1;
   int neg;
   while (lisspace(cast_uchar(*s))) s++;  /* skip initial spaces */
-  neg = isneg(&s);
+  neg = isneg(&s);//是否负数
   if (s[0] == '0' &&
-      (s[1] == 'x' || s[1] == 'X')) {  /* hex? */
+      (s[1] == 'x' || s[1] == 'X')) {  /* hex? 十六进制? Ox开头 */ 
     s += 2;  /* skip '0x' */
     for (; lisxdigit(cast_uchar(*s)); s++) {
       a = a * 16 + luaO_hexavalue(*s);
       empty = 0;
     }
   }
-  else {  /* decimal */
+  else {  /* decimal小数 */
     for (; lisdigit(cast_uchar(*s)); s++) {
       int d = *s - '0';
       if (a >= MAXBY10 && (a > MAXBY10 || d > MAXLASTD + neg))  /* overflow? */
@@ -327,7 +347,8 @@ static const char *l_str2int (const char *s, lua_Integer *result) {
   }
 }
 
-
+//string to number
+//先试着转化int，不行转为float
 size_t luaO_str2num (const char *s, TValue *o) {
   lua_Integer i; lua_Number n;
   const char *e;

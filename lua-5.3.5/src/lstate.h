@@ -90,7 +90,7 @@ typedef struct stringtable {
 ** function can be called with the correct top.
 */
 typedef struct CallInfo {
-  StkId func;  /* function index in the stack */
+  StkId func;  /* function index in the stack */ //TValue *
   StkId	top;  /* top for this function */
   struct CallInfo *previous, *next;  /* dynamic call link */
   union {
@@ -162,11 +162,13 @@ typedef struct global_State {
   unsigned int gcfinnum;  /* number of finalizers to call in each GC step */
   int gcpause;  /* size of pause between successive GCs */
   int gcstepmul;  /* GC 'granularity' */
+  //在不受保护的错误中会调用
   lua_CFunction panic;  /* to be called in unprotected errors */
   struct lua_State *mainthread;
   const lua_Number *version;  /* pointer to version number */
   TString *memerrmsg;  /* memory-error message */
-  TString *tmname[TM_N];  /* array with tag-method names */
+  //TM方法 例如ADD index newindex sub等等
+  TString *tmname[TM_N];  /* array with tag-method names*/
   struct Table *mt[LUA_NUMTAGS];  /* metatables for basic types */
   TString *strcache[STRCACHE_N][STRCACHE_M];  /* cache for strings in API */
 } global_State;
@@ -206,7 +208,7 @@ struct lua_State {
 
 
 /*
-** Union of all collectable objects (only for conversions)
+** Union of all collectable objects (only for conversions转化)
 */
 union GCUnion {
   GCObject gc;  /* common header */

@@ -36,11 +36,11 @@
 #include "llimits.h"
 
 
-#define ALPHABIT	0
-#define DIGITBIT	1
-#define PRINTBIT	2
-#define SPACEBIT	3
-#define XDIGITBIT	4
+#define ALPHABIT	0 //alpha 字母
+#define DIGITBIT	1 //digit 数字
+#define PRINTBIT	2 //print
+#define SPACEBIT	3 //space 空格
+#define XDIGITBIT	4 //xdigit 十六进制
 
 
 #define MASK(B)		(1 << (B))
@@ -57,15 +57,19 @@
 #define lislalpha(c)	testprop(c, MASK(ALPHABIT))
 #define lislalnum(c)	testprop(c, (MASK(ALPHABIT) | MASK(DIGITBIT)))
 #define lisdigit(c)	testprop(c, MASK(DIGITBIT))
-#define lisspace(c)	testprop(c, MASK(SPACEBIT))
+#define lisspace(c)	testprop(c, MASK(SPACEBIT))   // 1<<3
 #define lisprint(c)	testprop(c, MASK(PRINTBIT))
 #define lisxdigit(c)	testprop(c, MASK(XDIGITBIT))
 
 /*
-** this 'ltolower' only works for alphabetic characters
+** this 'ltolower' only works for alphabetic characters（字母数字符）
 */
 #define ltolower(c)	((c) | ('A' ^ 'a'))
-
+//A 0100 0001
+//a 0110 0001
+//'A' ^ 'a'  0010 0000
+//B 0100 0010 ---- ((B) | ('A' ^ 'a')) =  0110 0010 = b
+//C 0100 0011 ---- ((B) | ('A' ^ 'a')) = 0110 0011 = c
 
 /* two more entries for 0 and -1 (EOZ) */
 LUAI_DDEC const lu_byte luai_ctype_[UCHAR_MAX + 2];

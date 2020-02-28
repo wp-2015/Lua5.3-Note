@@ -734,6 +734,7 @@ static GCObject **sweeplist (lua_State *L, GCObject **p, lu_mem count);
 */
 static GCObject **sweeplist (lua_State *L, GCObject **p, lu_mem count) {
   global_State *g = G(L);
+  //((g)->currentwhite ^ WHITEBITS)
   int ow = otherwhite(g);
   int white = luaC_white(g);  /* current white */
   while (*p != NULL && count-- > 0) {
@@ -742,7 +743,7 @@ static GCObject **sweeplist (lua_State *L, GCObject **p, lu_mem count) {
     if (isdeadm(ow, marked)) {  /* is 'curr' dead? */
       *p = curr->next;  /* remove 'curr' from list */
       freeobj(L, curr);  /* erase 'curr' */
-    }
+    } 
     else {  /* change mark to 'white' */
       curr->marked = cast_byte((marked & maskcolors) | white);
       p = &curr->next;  /* go to next element */
@@ -1161,7 +1162,8 @@ void luaC_fullgc (lua_State *L, int isemergency) {
   global_State *g = G(L);
   lua_assert(g->gckind == KGC_NORMAL);
   if (isemergency) g->gckind = KGC_EMERGENCY;  /* set flag */ //gc是由于分配失败造成的
-  if (keepinvariant(g)) {  /* black objects? */
+  //(g)->gcstate <= GCSatomic
+  if (keepinvariant(g)) {  /* black objects? */ 
     entersweep(L); /* sweep everything to turn them back to white */
   }
   /* finish any pending sweep phase to start a new cycle */

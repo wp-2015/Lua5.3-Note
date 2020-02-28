@@ -430,7 +430,7 @@
 
 
 /* The following definitions are good for most cases here */
-
+//floor() 向下取整
 #define l_floor(x)		(l_mathop(floor)(x))
 
 #define lua_number2str(s,sz,n)  \
@@ -444,6 +444,7 @@
 ** has an exact representation as a float; MAXINTEGER may not have one,
 ** and therefore its conversion to float may have an ill-defined value.)
 */
+//n >= float(INT_MIN) && n < -float(INT_MIN) (*(p) = (int)(n), 1))
 #define lua_numbertointeger(n,p) \
   ((n) >= (LUA_NUMBER)(LUA_MININTEGER) && \
    (n) < -(LUA_NUMBER)(LUA_MININTEGER) && \
@@ -649,6 +650,7 @@
 #undef l_mathop  /* variants not available */
 #undef lua_str2number
 #define l_mathop(op)		(lua_Number)op  /* no variant */
+// strtod  把参数 str 所指向的字符串转换为一个浮点数（类型为 double 型）
 #define lua_str2number(s,p)	((lua_Number)strtod((s), (p)))
 #endif
 
@@ -672,7 +674,7 @@
 
 
 /*
-@@ lua_getlocaledecpoint gets the locale "radix character" (decimal point).
+@@ lua_getlocaledecpoint gets the locale "radix（根、基数） character" (decimal point小数点).
 ** Change that if you do not want to use C locales. (Code using this
 ** macro must include header 'locale.h'.)
 */

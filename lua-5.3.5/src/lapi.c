@@ -42,7 +42,7 @@ const char lua_ident[] =
 /* corresponding test */
 #define isvalid(o)	((o) != luaO_nilobject)
 
-/* test for pseudo index */
+/* test for pseudo假的 index */ //如果i < 15000 - 1000 则为假的
 #define ispseudo(i)		((i) <= LUA_REGISTRYINDEX)
 
 /* test for upvalue */
@@ -99,28 +99,32 @@ static void growstack (lua_State *L, void *ud) {
   luaD_growstack(L, size);
 }
 
-
+//检查L栈中是否还有n个空间可以使用
 LUA_API int lua_checkstack (lua_State *L, int n) {
   int res;
   CallInfo *ci = L->ci;
   lua_lock(L);
   api_check(L, n >= 0, "negative 'n'");
+  //最大空间-已经使用的空间 > n 说明栈中还有可以承载大小为n的空间
   if (L->stack_last - L->top > n)  /* stack large enough? */
     res = 1;  /* yes; check is OK */
   else {  /* no; need to grow stack */
+    //已经使用的空间
     int inuse = cast_int(L->top - L->stack) + EXTRA_STACK;
+    //已经使用的空间+需要开辟的空间>最大空间 不可以在扩展了已经
     if (inuse > LUAI_MAXSTACK - n)  /* can grow without overflow? */
       res = 0;  /* no */
     else  /* try to grow stack */
       res = (luaD_rawrunprotected(L, &growstack, &n) == LUA_OK);
   }
+  //如果扩展成功
   if (res && ci->top < L->top + n)
     ci->top = L->top + n;  /* adjust frame top */
   lua_unlock(L);
   return res;
 }
 
-
+//to中顶部的n个元素移动到from
 LUA_API void lua_xmove (lua_State *from, lua_State *to, int n) {
   int i;
   if (from == to) return;
@@ -136,7 +140,7 @@ LUA_API void lua_xmove (lua_State *from, lua_State *to, int n) {
   lua_unlock(to);
 }
 
-
+//替换panic字段(panic为lua_CFunction，当不受保护的错误发生时调用)
 LUA_API lua_CFunction lua_atpanic (lua_State *L, lua_CFunction panicf) {
   lua_CFunction old;
   lua_lock(L);
@@ -146,7 +150,7 @@ LUA_API lua_CFunction lua_atpanic (lua_State *L, lua_CFunction panicf) {
   return old;
 }
 
-
+//返回当前lua版本.有两个地方记录。一个是宏LUA_VERSION_NUM一个是L中的global_State中的version字段
 LUA_API const lua_Number *lua_version (lua_State *L) {
   static const lua_Number version = LUA_VERSION_NUM;
   if (L == NULL) return &version;
@@ -161,29 +165,36 @@ LUA_API const lua_Number *lua_version (lua_State *L) {
 
 
 /*
+** 试图转变一个合适的地址到绝对地址
+** 举例 L中当前方法占用空间为20，idx为-5则返回15。20-5=15
 ** convert an acceptable stack index into an absolute index
 */
 LUA_API int lua_absindex (lua_State *L, int idx) {
+  //如果idx > 0或者idx <= 15000 - 1000，则不在转换范围内
+  //否则用当前方法占用的空间大小+idx
   return (idx > 0 || ispseudo(idx))
          ? idx
          : cast_int(L->top - L->ci->func) + idx;
 }
 
-
+//获取当前方法的大小
 LUA_API int lua_gettop (lua_State *L) {
   return cast_int(L->top - (L->ci->func + 1));
 }
 
-
+//设置L的top字段，因为top字段代表的是当前已经占用的栈的顶部地址
 LUA_API void lua_settop (lua_State *L, int idx) {
   StkId func = L->ci->func;
   lua_lock(L);
+  //当idx大于0也就是扩展的时候，把top地址扩展
+  //但是也不能超出stack_last字段，因为stack_last代表栈的顶部.然后将扩充的空间置空
   if (idx >= 0) {
     api_check(L, idx <= L->stack_last - (func + 1), "new top too large");
     while (L->top < (func + 1) + idx)
       setnilvalue(L->top++);
     L->top = (func + 1) + idx;
   }
+  //当idx小于0也就是缩小的时候，直接移动top就可以
   else {
     api_check(L, -(idx+1) <= (L->top - (func + 1)), "invalid new top");
     L->top += idx+1;  /* 'subtract' index (index is negative) */
@@ -193,8 +204,9 @@ LUA_API void lua_settop (lua_State *L, int idx) {
 
 
 /*
+** 倒置栈内元素
 ** Reverse the stack segment from 'from' to 'to'
-** (auxiliary to 'lua_rotate')
+** (auxiliary辅助 to 'lua_rotate')
 */
 static void reverse (lua_State *L, StkId from, StkId to) {
   for (; from < to; from++, to--) {
@@ -224,7 +236,7 @@ LUA_API void lua_rotate (lua_State *L, int idx, int n) {
   lua_unlock(L);
 }
 
-
+//先计算fromidx与toidx在L中的addr，然后将from中的值拷贝到to中。
 LUA_API void lua_copy (lua_State *L, int fromidx, int toidx) {
   TValue *fr, *to;
   lua_lock(L);
@@ -239,7 +251,7 @@ LUA_API void lua_copy (lua_State *L, int fromidx, int toidx) {
   lua_unlock(L);
 }
 
-
+//把L的idx位置上的TValue放到L的top处，然后top++
 LUA_API void lua_pushvalue (lua_State *L, int idx) {
   lua_lock(L);
   setobj2s(L, L->top, index2addr(L, idx));
@@ -250,16 +262,16 @@ LUA_API void lua_pushvalue (lua_State *L, int idx) {
 
 
 /*
-** access functions (stack -> C)
+** access进入 functions (stack -> C)
 */
 
-
+//L的idx位置上的TValue的tt_字段 
 LUA_API int lua_type (lua_State *L, int idx) {
   StkId o = index2addr(L, idx);
   return (isvalid(o) ? ttnov(o) : LUA_TNONE);
 }
 
-
+//有一个char[11] 记录luaT_typenames.返回luaT_typenames_[t+1]
 LUA_API const char *lua_typename (lua_State *L, int t) {
   UNUSED(L);
   api_check(L, LUA_TNONE <= t && t < LUA_NUMTAGS, "invalid tag");
@@ -278,7 +290,12 @@ LUA_API int lua_isinteger (lua_State *L, int idx) {
   return ttisinteger(o);
 }
 
-
+/*
+取得L的idx位置上的TValue
+如果TValue是float，返回TValue的value_的n(lua_Number类型)
+如果是integer,返回i
+如果是string，返回str2num(注意这里判断了十六进制的number、float与string转化)
+*/
 LUA_API int lua_isnumber (lua_State *L, int idx) {
   lua_Number n;
   const TValue *o = index2addr(L, idx);

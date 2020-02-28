@@ -66,7 +66,7 @@
 
 
 /*
-** Try to convert a value to a float. The float case is already handled
+** Try to convert转换 a value to a float. The float case is already handled
 ** by the macro 'tonumber'.
 */
 int luaV_tonumber_ (const TValue *obj, lua_Number *n) {
@@ -95,19 +95,24 @@ int luaV_tointeger (const TValue *obj, lua_Integer *p, int mode) {
   TValue v;
  again:
   if (ttisfloat(obj)) {
-    lua_Number n = fltvalue(obj);
+    //obj->value_->n(lua_Number)
+    //这里先从TValue取出n字段，然后向下取整，如果不等于以前的了说明不是int
+    lua_Number n = fltvalue(obj); 
     lua_Number f = l_floor(n);
     if (n != f) {  /* not an integral value? */
       if (mode == 0) return 0;  /* fails if mode demands integral value */
       else if (mode > 1)  /* needs ceil? */
         f += 1;  /* convert floor to ceil (remember: n != f) */
     }
+    //n >= float(INT_MIN) && n < -float(INT_MIN) (*(p) = (int)(n), 1))
     return lua_numbertointeger(f, p);
   }
+  //如果是int，直接取出TValue的i字段
   else if (ttisinteger(obj)) {
     *p = ivalue(obj);
     return 1;
   }
+  //如果是string，转位num或int
   else if (cvt2num(obj) &&
             luaO_str2num(svalue(obj), &v) == vslen(obj) + 1) {
     obj = &v;
@@ -406,6 +411,7 @@ int luaV_lessequal (lua_State *L, const TValue *l, const TValue *r) {
 */
 int luaV_equalobj (lua_State *L, const TValue *t1, const TValue *t2) {
   const TValue *tm;
+  //判断类型是否相同，
   if (ttype(t1) != ttype(t2)) {  /* not the same variant? */
     if (ttnov(t1) != ttnov(t2) || ttnov(t1) != LUA_TNUMBER)
       return 0;  /* only numbers can be equal with different variants */
@@ -415,18 +421,36 @@ int luaV_equalobj (lua_State *L, const TValue *t1, const TValue *t2) {
     }
   }
   /* values have same type and same variant */
+  //相同的type和相同的variant
   switch (ttype(t1)) {
+    //都是是nill类型，相等
     case LUA_TNIL: return 1;
+    //integer numbers，这里把number分为int和float(根据variant，因为float保存在n字段，int保存在i字段)
+    //取出TValue的i比较
     case LUA_TNUMINT: return (ivalue(t1) == ivalue(t2));
+    //float numbers 取出TValue的n字段 == 比较
     case LUA_TNUMFLT: return luai_numeq(fltvalue(t1), fltvalue(t2));
+    //bool 取出TValue的b字段比较。注意b字段是int类型
     case LUA_TBOOLEAN: return bvalue(t1) == bvalue(t2);  /* true must be 1 !! */
+    //lightUserdata 取出TValue的p字段。注意这个p是void *类型。如果相同的话指针指向的空间应该是一个
     case LUA_TLIGHTUSERDATA: return pvalue(t1) == pvalue(t2);
+    //Function类型 这里把Function分为了三类(根据Variant)
+    //Function(light C function) TValue的f字段比较
     case LUA_TLCF: return fvalue(t1) == fvalue(t2);
+    //string 这里把string分为两种类型(short、long)
+    //short string 这里取出TValue的gc，然后通过GCUnion的内联，把gc转为GCUnion的ts字段(TString类型)
+    //然后直接用==处理
     case LUA_TSHRSTR: return eqshrstr(tsvalue(t1), tsvalue(t2));
+    //long string
+    //与short string不同的是比较方式是luaS_eqlngstr
+    //如果地址相同则肯定相等，否则需要满足a与b的长度相等，并且TString的extra字段都相等
     case LUA_TLNGSTR: return luaS_eqlngstr(tsvalue(t1), tsvalue(t2));
+    //userdata
     case LUA_TUSERDATA: {
+      //取出TValue的gc，通过GCUnion的内联，把gc转为GCUnion的u字段(Udata类型)
       if (uvalue(t1) == uvalue(t2)) return 1;
       else if (L == NULL) return 0;
+      //将t1转为userdata，取出userdata的metatable的g表，用g表中的eq作为tm
       tm = fasttm(L, uvalue(t1)->metatable, TM_EQ);
       if (tm == NULL)
         tm = fasttm(L, uvalue(t2)->metatable, TM_EQ);

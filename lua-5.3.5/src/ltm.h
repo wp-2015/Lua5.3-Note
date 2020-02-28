@@ -21,7 +21,7 @@ typedef enum {
   TM_GC,
   TM_MODE,
   TM_LEN,
-  TM_EQ,  /* last tag method with fast access */
+  TM_EQ,  /* last tag method with fast access 最后一个标签方法与快速访问*/
   TM_ADD,
   TM_SUB,
   TM_MUL,

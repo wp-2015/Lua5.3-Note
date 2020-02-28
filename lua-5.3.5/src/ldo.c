@@ -134,6 +134,7 @@ l_noret luaD_throw (lua_State *L, int errcode) {
 
 
 int luaD_rawrunprotected (lua_State *L, Pfunc f, void *ud) {
+  //先缓存一下nCcalls字段，因为下面会对L重新赋值，新的L需要再赋值原nCcalls
   unsigned short oldnCcalls = L->nCcalls;
   struct lua_longjmp lj;
   lj.status = LUA_OK;
@@ -413,9 +414,9 @@ int luaD_poscall (lua_State *L, CallInfo *ci, StkId firstResult, int nres) {
 
 /*
 ** Prepares a function call: checks the stack, creates a new CallInfo
-** entry, fills in the relevant information, calls hook if needed.
-** If function is a C function, does the call, too. (Otherwise, leave
-** the execution ('luaV_execute') to the caller, to allow stackless
+** entry, fills填充 in the relevant相关 information, calls hook if needed.
+** If function is a C function, does the call, too. (Otherwise否则, leave
+** the execution执行 ('luaV_execute') to the caller, to allow stackless
 ** calls.) Returns true iff function has been executed (C function).
 */
 int luaD_precall (lua_State *L, StkId func, int nresults) {
@@ -423,9 +424,11 @@ int luaD_precall (lua_State *L, StkId func, int nresults) {
   CallInfo *ci;
   switch (ttype(func)) {
     case LUA_TCCL:  /* C closure */
+      //func的gc通过GCUnion转为cl(Closure类型),取c字段(CClosure类型)然后取f字段(lua_CFunction类型)
       f = clCvalue(func)->f;
       goto Cfunc;
     case LUA_TLCF:  /* light C function */
+      //直接取出TValue的f字段(lua_CFunction类型)
       f = fvalue(func);
      Cfunc: {
       int n;  /* number of returns */

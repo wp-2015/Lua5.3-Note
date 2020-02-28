@@ -37,6 +37,8 @@
 /*
 ** equality for long strings
 */
+//long string类型比较
+//如果地址相同则肯定相等，否则需要满足a与b的长度相等，并且TString的extra字段都相等
 int luaS_eqlngstr (TString *a, TString *b) {
   size_t len = a->u.lnglen;
   lua_assert(a->tt == LUA_TLNGSTR && b->tt == LUA_TLNGSTR);

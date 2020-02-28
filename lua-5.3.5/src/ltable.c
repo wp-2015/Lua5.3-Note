@@ -54,7 +54,10 @@
 */
 #define MAXHBITS	(MAXABITS - 1)
 
-
+//#define twoto(x)	(1<<(x))
+//#define sizenode(t)	(twoto((t)->lsizenode))
+//这里lsizenode的个数是2的n次方。
+//lmod = (cast(int, (n) & (sizenode(t)-1)))  
 #define hashpow2(t,n)		(gnode(t, lmod((n), sizenode(t))))
 
 #define hashstr(t,str)		hashpow2(t, (str)->hash)
@@ -536,14 +539,23 @@ const TValue *luaH_getint (Table *t, lua_Integer key) {
 /*
 ** search function for short strings
 */
+//Table中的Node是key value键值对，并且是数组存放的，因此想要找到一个Node先要确定存放位置
+//TString中有个字段是存放对应的hash。
+//根据这个hash查找node。如果node的key与输入的参数，也就是想要查找的key相同，则找到了
+//如果不同，说明hash是重复的，则查找数组中的下一个，直到查找完剩下的。
 const TValue *luaH_getshortstr (Table *t, TString *key) {
+  //这里应该是根据key找到对应的node。
+  //TString中有字段hash(int)。
   Node *n = hashstr(t, key);
   lua_assert(key->tt == LUA_TSHRSTR);
   for (;;) {  /* check whether 'key' is somewhere in the chain */
+    //gkey找到node中的i_key(TKey)中的tvk(TValue)字段
     const TValue *k = gkey(n);
+    //如果k为shortstring并且key与k对应的value相等
     if (ttisshrstring(k) && eqshrstr(tsvalue(k), key))
       return gval(n);  /* that's it */
     else {
+      //如果不想等说明hash有重复，找下一个。
       int nx = gnext(n);
       if (nx == 0)
         return luaO_nilobject;  /* not found */

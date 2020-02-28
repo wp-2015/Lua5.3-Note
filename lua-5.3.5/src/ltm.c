@@ -98,9 +98,11 @@ const char *luaT_objtypename (lua_State *L, const TValue *o) {
   return ttypename(ttnov(o));  /* else use standard type name */
 }
 
-
+//luaT_callTM(L, tm, t1, t2, L->top, 1)
 void luaT_callTM (lua_State *L, const TValue *f, const TValue *p1,
                   const TValue *p2, TValue *p3, int hasres) {
+  //#define savestack(L,p)		((char *)(p) - (char *)L->stack)
+  //savestack p3 - stack
   ptrdiff_t result = savestack(L, p3);
   StkId func = L->top;
   setobj2s(L, func, f);  /* push function (assume EXTRA_STACK) */
@@ -110,6 +112,7 @@ void luaT_callTM (lua_State *L, const TValue *f, const TValue *p1,
   if (!hasres)  /* no result? 'p3' is third argument */
     setobj2s(L, L->top++, p3);  /* 3rd argument */
   /* metamethod may yield only when called from Lua code */
+  //isLua #define isLua(ci)	((ci)->callstatus & CIST_LUA)
   if (isLua(L->ci))
     luaD_call(L, func, hasres);
   else
